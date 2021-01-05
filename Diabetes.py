@@ -84,3 +84,26 @@ net = Model(7, 1)
 criterion = torch.nn.BCELoss(size_average=True)
 optimizer = torch.optim.SGD(net.parameters(), lr = 0.1, momentum = 0.9)
         
+# training the network
+epochs = 200
+for epoch in range(200):
+    for inputs, labels in train_loader:
+        inputs = inputs.float()
+        labels = labels.float()
+        # forward propagation
+        outputs = net(inputs)
+        # loss calculation
+        loss = criterion(outputs, labels)
+        # clear the gradient buffer
+        optimizer.zero_grad()
+        # backprop
+        loss.backward()
+        # update weights
+        optimizer.step()
+    
+    # accuracy calculation
+    outputs = (outputs >0.5).float()
+    accuracy = (outputs == labels).float().mean()
+    # print stats
+    print(f"Epoch {epoch+1}/{epochs}, loss: {loss}, Accuracy: {accuracy}")
+        
