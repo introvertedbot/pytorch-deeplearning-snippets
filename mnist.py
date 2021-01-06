@@ -33,4 +33,26 @@ test_loader = torch.utils.data.DataLoader(dataset = test_dataset,
                                           batch_size = batch_size,
                                           shuffle = False)
 
+class Net(nn.Module):
+    def __init__(self, input_size, hidden_size, out_size):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, out_size)
+        
+    def forward(self, x):
+        out = self.fc1(x)
+        out = self.relu(out)
+        out = self.fc2(out)
+        out = self.relu(out)
+        out = self.fc3(out)
+        return out
+
+net = Net(input_size, hidden_size, out_size)
+CUDA = torch.cuda.is_available()
+if CUDA:
+    net = net.cuda()
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(net.parameters(),lr = learning_rate)
 
