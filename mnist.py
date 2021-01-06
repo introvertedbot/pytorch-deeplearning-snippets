@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
-from torch.autograd import Variable
 
 input_size = 784
 hidden_size = 400
@@ -17,6 +16,8 @@ out_size = 10
 epochs = 10
 batch_size = 100
 learning_rate = 0.001
+
+# importing the training and testing dataset
 
 train_dataset = datasets.MNIST(root = 'D:\\',
                                train = True,
@@ -26,12 +27,16 @@ test_dataset = datasets.MNIST(root = 'D:\\',
                                train = False,
                                transform = transforms.ToTensor())
 
+# building train and test loader for batch
+
 train_loader = torch.utils.data.DataLoader(dataset = train_dataset,
                                            batch_size = batch_size,
                                            shuffle = True)
 test_loader = torch.utils.data.DataLoader(dataset = test_dataset,
                                           batch_size = batch_size,
                                           shuffle = False)
+
+# building the model
 
 class Net(nn.Module):
     def __init__(self, input_size, hidden_size, out_size):
@@ -53,7 +58,7 @@ net = Net(input_size, hidden_size, out_size)
 CUDA = torch.cuda.is_available()
 if CUDA:
     net = net.cuda()
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss() # used cross-entropy as we have multiple output class i.e 10
 optimizer = torch.optim.Adam(net.parameters(),lr = learning_rate)
 
 
