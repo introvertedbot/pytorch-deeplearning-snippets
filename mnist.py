@@ -56,3 +56,42 @@ if CUDA:
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net.parameters(),lr = learning_rate)
 
+
+#Train the network
+for epoch in range(epochs):
+    correct_train = 0
+    running_loss = 0
+    for i, (images, labels) in enumerate(train_loader):   
+        #Flatten the image from size (batch,1,28,28) --> (100,1,28,28) where 1 represents the number of channels (grayscale-->1),
+        # to size (100,784) and wrap it in a variable
+        images = images.view(-1, 28*28)    
+        if CUDA:
+            images = images.cuda()
+            labels = labels.cuda()
+            
+        outputs = net(images)       
+        _, predicted = torch.max(outputs.data, 1)                                              
+        correct_train += (predicted == labels).sum() 
+        loss = criterion(outputs, labels)                 # Difference between the actual and predicted (loss function)
+        running_loss += loss.item()
+        optimizer.zero_grad() 
+        loss.backward()                                   # Backpropagation
+        optimizer.step()                                  # Update the weights
+        
+    print('Epoch [{}/{}], Training Loss: {:.3f}, Training Accuracy: {:.3f}%'.format
+          (epoch+1, epochs, running_loss/len(train_loader), (100*correct_train.double()/len(train_dataset))))
+print("DONE TRAINING!")
+
+
+with torch.no_grad():
+    correct = 0
+    for images, labels in test_loader:
+        if CUDA:
+            images = images.cuda()
+            labels = labels.cuda()
+        images = images.view(-1, 28*28)
+        outputs = net(images)
+        _, predicted = torch.max(outputs.data, 1)
+        correct += (predicted == labels).sum().item()
+
+    print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / len(test_dataset)))
