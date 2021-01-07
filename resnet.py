@@ -108,3 +108,44 @@ class ResNet(nn.Module):
         out = self.fc(out)
         return out
     
+model = ResNet(ResidualBlock, [2, 2, 2]).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+decay = 0
+model.train()
+for epoch in range(num_epochs):
+    
+    # Decay the learning rate every 20 epochs
+    if (epoch+1) % 20 == 0:
+        decay+=1
+        optimizer.param_groups[0]['lr'] = learning_rate * (0.5**decay)
+        print("The new learning rate is {}".format(optimizer.param_groups[0]['lr']))
+        
+    for i, (images, labels) in enumerate(train_loader):
+        images = images.to(device)
+        labels = labels.to(device)
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        if (i+1) % 100 == 0:
+            print ("Epoch [{}/{}], Step [{}/{}] Loss: {:.4f}"
+                   .format(epoch+1, num_epochs, i+1, len(train_loader), loss.item()))
+
+#Test the model
+model.eval()
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for images, labels in test_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    print('Accuracy of the model on the test images: {} %'.format(100 * correct / total))
