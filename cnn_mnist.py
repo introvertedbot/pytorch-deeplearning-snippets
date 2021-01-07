@@ -110,35 +110,103 @@ for i,(inputs,labels) in enumerate (train_load):
     correct += (predicted == labels).sum()
     break
 
-# Training the CNN
-num_epohs = 10
+#Training the CNN
+num_epochs = 25
+
+#Define the lists to store the results of loss and accuracy
 train_loss = []
-train_accuracy = []
 test_loss = []
+train_accuracy = []
 test_accuracy = []
-for epoch in range(num_epohs):
+
+#Training
+for epoch in range(num_epochs): 
+    #Reset these below variables to 0 at the begining of every epoch
     correct = 0
     iterations = 0
     iter_loss = 0.0
     
-    model.train()
+    model.train()                   # Put the network into training mode
     
-    for i,(inputs, labels) in enumerate(train_load):
+    for i, (inputs, labels) in enumerate(train_load):
+        
         if CUDA:
             inputs = inputs.cuda()
             labels = labels.cuda()
-        outputs = model(inputs)
-        loss = loss_fn(outputs, labels)
-        iter_loss += loss.item()
         
-        optimizer.zero_grad() # w <-- w - lr*gradient
-        loss.backward()
-        optimizer.step()
+        outputs = model(inputs)         
+        loss = loss_fn(outputs, labels)  
+        iter_loss += loss.item()         # Accumulate the loss
+        optimizer.zero_grad()            # Clear off the gradient in (w = w - gradient)
+        loss.backward()                 # Backpropagation 
+        optimizer.step()                # Update the weights
         
+        # Record the correct predictions for training data 
         _, predicted = torch.max(outputs, 1)
-        correct += (predicted == labels).sum().item()
+        correct += (predicted == labels).sum()
         iterations += 1
     
-    train_loss.append(iter_loss/iterations())
-    train_accuracy.append(correct/ len(train_dataset))
+    # Record the training loss
+    train_loss.append(iter_loss/iterations)
+    # Record the training accuracy
+    train_accuracy.append((100 * correct / len(train_dataset)))
+   
+    #Testing
+    testing_loss = 0.0
+    correct = 0
+    iterations = 0
+
+    model.eval()                    # Put the network into evaluation mode
+    
+    for i, (inputs, labels) in enumerate(test_load):
+
+        if CUDA:
+            inputs = inputs.cuda()
+            labels = labels.cuda()
         
+        outputs = model(inputs)     
+        loss = loss_fn(outputs, labels) # Calculate the loss
+        testing_loss += loss.item()
+        # Record the correct predictions for training data
+        _, predicted = torch.max(outputs, 1)
+        correct += (predicted == labels).sum()
+        
+        iterations += 1
+
+    # Record the Testing loss
+    test_loss.append(testing_loss/iterations)
+    # Record the Testing accuracy
+    test_accuracy.append((100 * correct / len(test_dataset)))
+    
+    print ('Epoch {}/{}, Training Loss: {:.3f}, Training Accuracy: {:.3f}, Testing Loss: {:.3f}, Testing Acc: {:.3f}'
+           .format(epoch+1, num_epochs, train_loss[-1], train_accuracy[-1], 
+             test_loss[-1], test_accuracy[-1]))
+
+# plotting the loss
+f = plt.figure(figsize = (10, 10))
+plt.plot(train_loss, label = 'Training Loss')
+plt.plot(test_loss, label = 'Testing Loss')
+plt.legend()
+plt.show()
+
+
+# plotting the accuracy
+f = plt.figure(figsize = (10, 10))
+plt.plot(train_accuracy, label = 'Training Accuracy')
+plt.plot(test_accuracy, label = 'Testing Accuracy')
+plt.legend()
+plt.show()
+
+img = test_dataset[30][0].resize_((1, 1, 28, 28))   #(batch_size,channels,height,width)
+label = test_dataset[30][1]
+
+model.eval()
+
+if CUDA:
+    model = model.cuda()
+    img = img.cuda()
+    
+output = model(img)
+_, predicted = torch.max(output,1)
+print("Prediction is: {}".format(predicted.item()))
+print("Actual is: {}".format(label))
