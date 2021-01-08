@@ -61,3 +61,18 @@ print("There are {} batches in the training set".format(len(dataloaders['train']
 print("There are {} batches in the test set".format(len(dataloaders['val'])))
 print("There are {} training images".format(dataset_sizes['train']))
 print("There are {} testing images".format(dataset_sizes['val']))
+
+#Load the ResNet
+model_conv = torchvision.models.resnet18(pretrained=True)
+
+#Freeze all layers in the network  
+for param in model_conv.parameters():  
+    param.requires_grad = False
+
+#Get the number of inputs of the last layer (or number of neurons in the layer preceeding the last layer)
+num_ftrs = model_conv.fc.in_features
+#Reconstruct the last layer (output layer) to have only two classes 
+model_conv.fc = nn.Linear(num_ftrs, 2)
+
+if torch.cuda.is_available():
+    model_conv = model_conv.cuda()
