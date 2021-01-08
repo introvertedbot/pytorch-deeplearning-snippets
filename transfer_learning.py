@@ -107,4 +107,29 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
 #Try experimenting with: optim.Adam(model_conv.fc.parameters(), lr=0.001)
 #Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+
+num_epochs = 25
+for epoch in range (num_epochs):
+    exp_lr_scheduler.step()
+    #Reset the correct to 0 after passing through all the dataset
+    correct = 0
+    for images,labels in dataloaders['train']:
+        images = Variable(images)
+        labels = Variable(labels)
+        if torch.cuda.is_available():
+            images = images.cuda()
+            labels = labels.cuda()
+            
+        optimizer.zero_grad()
+        outputs = model_conv(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()  
+        _, predicted = torch.max(outputs, 1) 
+        correct += (predicted == labels).sum()
+        
+    train_acc = 100 * correct / dataset_sizes['train']    
+    print ('Epoch [{}/{}], Loss: {:.4f}, Train Accuracy: {}%'
+            .format(epoch+1, num_epochs, loss.item(), train_acc))
+
