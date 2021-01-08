@@ -4,7 +4,8 @@ Created on Fri Jan  8 12:16:19 2021
 
 @author: -
 """
-
+import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -133,3 +134,53 @@ for epoch in range (num_epochs):
     print ('Epoch [{}/{}], Loss: {:.4f}, Train Accuracy: {}%'
             .format(epoch+1, num_epochs, loss.item(), train_acc))
 
+# Test the model
+model_conv.eval()  
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for (images, labels) in dataloaders['val']:
+        images = Variable(images)
+        labels = Variable(labels)
+        if torch.cuda.is_available():
+            images = images.cuda()
+            labels = labels.cuda()
+
+        outputs = model_conv(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    print('Test Accuracy: {:.3f} %'.format(100 * correct / total))
+
+#Visualize some predictions 
+
+fig = plt.figure()
+shown_batch = 0
+index = 0
+with torch.no_grad():
+    for (images, labels) in dataloaders['val']:
+        if shown_batch == 1:
+            break
+        shown_batch += 1
+        images = Variable(images)
+        labels = Variable(labels)
+        if torch.cuda.is_available():
+            images = images.cuda()
+            labels = labels.cuda()
+
+        outputs = model_conv(images)                            #The output is of shape (4,2)
+        _, preds = torch.max(outputs, 1)                        #The pred is of shape (4) --> [ 0,  0,  0,  1]
+        
+        for i in range(4):
+            index += 1
+            ax = plt.subplot(2,2,index)
+            ax.axis('off')
+            ax.set_title('Predicted Label: {}'.format(class_names[preds[i]]))
+            input_img = images.cpu().data[i]                    #Get the tensor of the image, and put it to cpu  
+            inp = input_img.numpy().transpose((1, 2, 0))        #If we have a tensor of shape (2,3,4) --> it becomes (3,4,2)
+            mean = np.array([0.485, 0.456, 0.406])
+            std = np.array([0.229, 0.224, 0.225])
+            inp = std * inp + mean
+            inp = np.clip(inp, 0, 1)
+            plt.imshow(inp)
