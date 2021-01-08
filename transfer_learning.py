@@ -8,7 +8,7 @@ Created on Fri Jan  8 12:16:19 2021
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.optim as lr_scheuler
+import torch.optim as lr_scheduler
 import torchvision 
 from torch.autograd import Variable
 from torchvision import datasets, models, transforms
@@ -76,3 +76,35 @@ model_conv.fc = nn.Linear(num_ftrs, 2)
 
 if torch.cuda.is_available():
     model_conv = model_conv.cuda()
+
+#Understand what's happening
+iteration = 0
+correct = 0
+for inputs,labels in dataloaders['train']:
+    if iteration==1:
+        break
+    inputs = Variable(inputs)
+    labels = Variable(labels)
+    if torch.cuda.is_available():
+        inputs = inputs.cuda()
+        labels = labels.cuda()
+    print("For one iteration, this is what happens:")
+    print("Input Shape:",inputs.shape)
+    print("Labels Shape:",labels.shape)
+    print("Labels are: {}".format(labels))
+    output = model_conv(inputs)
+    print("Output Tensor:", output)
+    print("Outputs Shape",output.shape)
+    _, predicted = torch.max(output, 1)
+    print("Predicted:", predicted)
+    print("Predicted Shape",predicted.shape)
+    correct += (predicted == labels).sum()   
+    print("Correct Predictions:",correct)
+    
+    iteration += 1
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
+#Try experimenting with: optim.Adam(model_conv.fc.parameters(), lr=0.001)
+#Decay LR by a factor of 0.1 every 7 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
