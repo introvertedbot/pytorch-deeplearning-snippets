@@ -12,6 +12,7 @@ import torch.optim as lr_scheuler
 import torchvision 
 from torch.autograd import Variable
 from torchvision import datasets, models, transforms
+import os
 
 # Data augmentation and normalization for training
 # Just normalization for validation
@@ -41,3 +42,22 @@ data_transforms = {
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
 }
+
+data_dir = 'D:\\hymenoptera_data'
+#Create a dictionary that contains the information of the images in both the training and validation set
+image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),data_transforms[x]) for x in ['train', 'val']}
+#Create a dictionary that contians the data loader
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], 
+                                              batch_size=4,
+                                              shuffle=True) for x in ['train', 'val']}
+
+#Create a dictionary that contains the size of each dataset (training and validation)
+dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+#Get the class names
+class_names = image_datasets['train'].classes
+#Print out the results 
+print("Class Names: {}".format(class_names))
+print("There are {} batches in the training set".format(len(dataloaders['train'])))
+print("There are {} batches in the test set".format(len(dataloaders['val'])))
+print("There are {} training images".format(dataset_sizes['train']))
+print("There are {} testing images".format(dataset_sizes['val']))
