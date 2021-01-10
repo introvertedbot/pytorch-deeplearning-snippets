@@ -88,3 +88,44 @@ model = VAE().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 
+# Define Loss
+def loss_function(reconstructed_image, original_image, mu, logvar):
+    bce = F.binary_cross_entropy(reconstructed_image, original_image.view(-1, 784), reduction = 'sum')
+    # kld = torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, 1))
+    kld = 0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar)
+    return bce + kld
+    
+
+# Train function
+def train(epoch):
+    model.train()
+    train_loss = 0
+    for i, (images, _) in enumerate(train_loader):
+        images = images.to(device)
+        reconstructed, mu, logvar = model(images)
+        loss = loss_function(reconstructed, images, mu, logvar)
+        optimizer.zero_grad()
+        loss.backward()
+        train_loss += loss.item()
+        optimizer.step()
+        
+        if i % 100 == 0:
+            print("Train Epoch {} [Batch {}/{}]\tLoss: {:.3f}".format(epoch, i, len(train_loader), loss.item()/len(images)))
+            
+    print('=====> Epoch {}, Average Loss: {:.3f}'.format(epoch, train_loss/len(train_loader.dataset)))
+
+
+# Test function
+def test(epoch):
+    model.eval()
+    test_loss = 0
+    with torch.no_grad():
+        for batch_idx, (images, _) in enumerate(test_loader):
+            images = images.to(device)
+            reconstructed, mu, logvar = model(images)
+            test_loss += loss_function(reconstructed, images, mu, logvar).item()
+            if batch_idx == 0:
+                comparison = torch.cat([images[:5], reconstructed.view(batch_size, 1, 28, 28)[:5]])
+                save_image(comparison.cpu(), 'results/reconstruction_' + str(epoch) + '.png', nrow = 5)
+
+    print('=====> Average Test Loss: {:.3f}'.format(test_loss/len(test_loader.dataset)))
