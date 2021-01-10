@@ -129,3 +129,14 @@ def test(epoch):
                 save_image(comparison.cpu(), 'results/reconstruction_' + str(epoch) + '.png', nrow = 5)
 
     print('=====> Average Test Loss: {:.3f}'.format(test_loss/len(test_loader.dataset)))
+    
+
+# Main function
+for epoch in range(1, epochs + 1):
+    train(epoch)
+    test(epoch)
+    with torch.no_grad():
+        # Get rid of the encoder and sample z from the gaussian ditribution and feed it to the decoder to generate samples
+        sample = torch.randn(64,20).to(device)
+        generated = model.decode(sample).cpu()
+        save_image(generated.view(64,1,28,28), 'results/sample_' + str(epoch) + '.png')
