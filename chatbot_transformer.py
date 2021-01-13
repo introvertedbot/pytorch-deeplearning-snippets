@@ -325,3 +325,19 @@ class LossWithLS(nn.Module):
         loss = self.criterion(prediction, labels)    # (batch_size * max_words, vocab_size)
         loss = (loss.sum(1) * mask).sum() / mask.sum()
         return loss
+    
+
+d_model = 512
+heads = 8
+num_layers = 3
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+epochs = 10
+
+with open('WORDMAP_corpus.json', 'r') as j:
+    word_map = json.load(j)
+    
+transformer = Transformer(d_model = d_model, heads = heads, num_layers = num_layers, word_map = word_map)
+transformer = transformer.to(device)
+adam_optimizer = torch.optim.Adam(transformer.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9)
+transformer_optimizer = AdamWarmup(model_size = d_model, warmup_steps = 4000, optimizer = adam_optimizer)
+criterion = LossWithLS(len(word_map), 0.1)
